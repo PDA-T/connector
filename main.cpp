@@ -3,8 +3,8 @@
 #include <windows.h>
 
 bool running = false;
-bool rightClick = false; // 添加一个标志位来控制是否为右键点击，true为右键
-int interval = 10; // 默认点击间隔为100毫秒
+bool rightClick = false; // true为右键
+int interval = 10; // 默认点击间隔
 HHOOK keyboardHook;
 
 void clicker() {
@@ -13,13 +13,11 @@ void clicker() {
             INPUT input = {0};
             input.type = INPUT_MOUSE;
             if (rightClick) {
-                // 模拟右键点击
                 input.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
                 SendInput(1, &input, sizeof(INPUT));
                 input.mi.dwFlags = MOUSEEVENTF_RIGHTUP;
                 SendInput(1, &input, sizeof(INPUT));
             } else {
-                // 模拟左键点击
                 input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
                 SendInput(1, &input, sizeof(INPUT));
                 input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
