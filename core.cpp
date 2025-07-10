@@ -14,16 +14,28 @@ int main() {
     LARGE_INTEGER freq, start, now;
     QueryPerformanceFrequency(&freq);
 
+    INPUT inputs[2];
+    ZeroMemory(inputs, sizeof(inputs));
+
+    // 初始化
+    bool useLeftButton = GetUseLeftButton();
+    int cps = GetCPS();
+    double interval_sec = 1.0 / (double) cps;
+    DWORD downFlag = useLeftButton ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_RIGHTDOWN;
+    DWORD upFlag = useLeftButton ? MOUSEEVENTF_LEFTUP : MOUSEEVENTF_RIGHTUP;
+    DWORD lastUpdate = GetTickCount();
+
     while (true) {
-        // 获取UI设置
-        bool useLeftButton = GetUseLeftButton();
-        int cps = GetCPS();
-        double interval_sec = 1.0 / (double) cps;
+        DWORD nowTick = GetTickCount();
+        if (nowTick - lastUpdate > 100) {
+            useLeftButton = GetUseLeftButton();
+            cps = GetCPS();
+            interval_sec = 1.0 / (double) cps;
+            downFlag = useLeftButton ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_RIGHTDOWN;
+            upFlag = useLeftButton ? MOUSEEVENTF_LEFTUP : MOUSEEVENTF_RIGHTUP;
+            lastUpdate = nowTick;
+        }
 
-        DWORD downFlag = useLeftButton ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_RIGHTDOWN;
-        DWORD upFlag = useLeftButton ? MOUSEEVENTF_LEFTUP : MOUSEEVENTF_RIGHTUP;
-
-        // 热键切换
         if (GetAsyncKeyState(HOTKEY) & 0x8000) {
             if (!keyDown) {
                 toggle = !toggle;
@@ -36,11 +48,13 @@ int main() {
         if (toggle) {
             QueryPerformanceCounter(&start);
 
-            // 发送点击事件
-            mouse_event(downFlag, 0, 0, 0, 0);
-            mouse_event(upFlag, 0, 0, 0, 0);
+            inputs[0].type = INPUT_MOUSE;
+            inputs[0].mi.dwFlags = downFlag;
+            inputs[1].type = INPUT_MOUSE;
+            inputs[1].mi.dwFlags = upFlag;
 
-            // 精确延迟
+            SendInput(2, inputs, sizeof(INPUT));
+
             do {
                 QueryPerformanceCounter(&now);
             } while ((now.QuadPart - start.QuadPart) < (LONGLONG) (freq.QuadPart * interval_sec));
